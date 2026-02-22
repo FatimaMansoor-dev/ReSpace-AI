@@ -1,0 +1,8 @@
+supabase
+python-dotenv
+customtkinter
+pillow
+requests
+pandas
+pyarrow
+datasets
