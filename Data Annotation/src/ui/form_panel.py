@@ -13,19 +13,19 @@ class FormPanel(ctk.CTkFrame):
     def setup_ui(self):
         # Using a scrollable frame for the form content to handle more fields
         self.scroll_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_container.pack(expand=True, fill="both", padx=5, pady=5)
+        self.scroll_container.pack(expand=True, fill="both", padx=2, pady=1)
 
-        self.form_title = ctk.CTkLabel(self.scroll_container, text="Annotate Image", font=("Inter", 24, "bold"))
-        self.form_title.pack(pady=(10, 20))
+        self.form_title = ctk.CTkLabel(self.scroll_container, text="Annotate Image", font=("Inter", 18, "bold"))
+        self.form_title.pack(pady=(2, 5))
 
         # Room Type
         self.setup_dropdown("Room Type", ROOM_TYPES, self.update_use_cases, "room")
         
         # Use Case (Dynamic)
-        self.use_case_label = ctk.CTkLabel(self.scroll_container, text="Use Case", font=("Inter", 14))
-        self.use_case_label.pack(anchor="w", padx=30)
-        self.use_case_dropdown = ctk.CTkOptionMenu(self.scroll_container, values=[])
-        self.use_case_dropdown.pack(fill="x", padx=30, pady=(5, 10))
+        self.use_case_label = ctk.CTkLabel(self.scroll_container, text="Use Case", font=("Inter", 11))
+        self.use_case_label.pack(anchor="w", padx=20)
+        self.use_case_dropdown = ctk.CTkOptionMenu(self.scroll_container, values=[], height=24, font=("Inter", 11))
+        self.use_case_dropdown.pack(fill="x", padx=20, pady=(1, 3))
         self.use_case_dropdown.set("Select Room First")
 
         # Color Theme
@@ -38,43 +38,42 @@ class FormPanel(ctk.CTkFrame):
         self.setup_dropdown("Lighting", LIGHTING_CONDITIONS, None, "lighting")
 
         # Furniture (Multi-select)
-        self.furniture_label = ctk.CTkLabel(self.scroll_container, text="Furniture (Multi-select)", font=("Inter", 14))
-        self.furniture_label.pack(anchor="w", padx=30, pady=(10, 0))
+        self.furniture_label = ctk.CTkLabel(self.scroll_container, text="Furniture", font=("Inter", 11))
+        self.furniture_label.pack(anchor="w", padx=20, pady=(3, 0))
         
         self.furniture_frame = ctk.CTkFrame(self.scroll_container, fg_color="transparent")
-        self.furniture_frame.pack(fill="x", padx=30, pady=5)
+        self.furniture_frame.pack(fill="x", padx=20, pady=1)
         
-        for item in FURNITURE_TYPES:
-            cb = ctk.CTkCheckBox(self.furniture_frame, text=item)
-            cb.pack(anchor="w", pady=2)
+        for i, item in enumerate(FURNITURE_TYPES):
+            cb = ctk.CTkCheckBox(self.furniture_frame, text=item, font=("Inter", 10), checkbox_width=16, checkbox_height=16)
+            cb.grid(row=i//4, column=i%4, padx=1, pady=1, sticky="w")
             self.furniture_checkboxes[item] = cb
 
-        # Bottom section (stats and buttons) stays outside scroll if possible or at end
-        self.stats_label = ctk.CTkLabel(self, text="0 / 0", font=("Inter", 12))
-        self.stats_label.pack(pady=5)
+        # Highlight: DB Stats above buttons
+        self.db_stats_label = ctk.CTkLabel(self, text="Total Annotated in DB: 0", font=("Inter", 11, "bold"))
+        self.db_stats_label.pack(pady=(2, 0))
 
-        self.submit_btn = ctk.CTkButton(self, text="Submit Annotation", command=self.on_submit, 
-                                        height=45, font=("Inter", 16, "bold"), fg_color="#2ecc71", hover_color="#27ae60")
-        self.submit_btn.pack(fill="x", padx=30, pady=5)
-
-        self.pass_btn = ctk.CTkButton(self, text="Pass / Discard", command=self.on_pass, 
-                                      height=40, font=("Inter", 14), fg_color="#e74c3c", hover_color="#c0392b")
-        self.pass_btn.pack(fill="x", padx=30, pady=5)
-
-        self.nav_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.nav_frame.pack(fill="x", padx=30, pady=10)
+        # Bottom section: Submit and Pass buttons in one row
+        self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.button_frame.pack(fill="x", padx=20, pady=(2, 5))
         
-        self.prev_btn = ctk.CTkButton(self.nav_frame, text="Previous", command=self.master.prev_image, width=100)
-        self.prev_btn.pack(side="left", padx=5)
-        
-        self.next_btn = ctk.CTkButton(self.nav_frame, text="Next", command=self.master.next_image, width=100)
-        self.next_btn.pack(side="right", padx=5)
+        # Configure columns for equal width buttons
+        self.button_frame.grid_columnconfigure(0, weight=1)
+        self.button_frame.grid_columnconfigure(1, weight=1)
+
+        self.submit_btn = ctk.CTkButton(self.button_frame, text="Submit", command=self.on_submit, 
+                                        height=38, font=("Inter", 12, "bold"), fg_color="#2ecc71", hover_color="#27ae60")
+        self.submit_btn.grid(row=0, column=0, padx=(0, 2), sticky="ew")
+
+        self.pass_btn = ctk.CTkButton(self.button_frame, text="Discard", command=self.on_pass, 
+                                      height=38, font=("Inter", 12), fg_color="#e74c3c", hover_color="#c0392b")
+        self.pass_btn.grid(row=0, column=1, padx=(2, 0), sticky="ew")
 
     def setup_dropdown(self, label_text, values, command, attr_name):
-        label = ctk.CTkLabel(self.scroll_container, text=label_text, font=("Inter", 14))
-        label.pack(anchor="w", padx=30)
-        dropdown = ctk.CTkOptionMenu(self.scroll_container, values=values, command=command)
-        dropdown.pack(fill="x", padx=30, pady=(5, 10))
+        label = ctk.CTkLabel(self.scroll_container, text=label_text, font=("Inter", 11))
+        label.pack(anchor="w", padx=20)
+        dropdown = ctk.CTkOptionMenu(self.scroll_container, values=values, command=command, height=24, font=("Inter", 11))
+        dropdown.pack(fill="x", padx=20, pady=(1, 3))
         dropdown.set("")
         setattr(self, f"{attr_name}_dropdown", dropdown)
 
@@ -104,8 +103,5 @@ class FormPanel(ctk.CTkFrame):
         for cb in self.furniture_checkboxes.values():
             cb.deselect()
 
-    def update_stats(self, current, total):
-        self.stats_label.configure(text=f"Image {current} of {total}")
-
-    def update_stats(self, current, total):
-        self.stats_label.configure(text=f"Image {current} of {total}")
+    def update_stats(self, current, total_session, total_db):
+        self.db_stats_label.configure(text=f"Total Annotated in DB: {total_db}")

@@ -27,7 +27,7 @@ class MainWindow(ctk.CTk):
         self.load_images()
 
     def setup_ui(self):
-        self.grid_columnconfigure(0, weight=3) # Image
+        self.grid_columnconfigure(0, weight=3) # Image (Balanced weight)
         self.grid_columnconfigure(1, weight=1) # Form
         self.grid_rowconfigure(0, weight=1)
 
@@ -39,6 +39,10 @@ class MainWindow(ctk.CTk):
 
     def load_images(self):
         self.data = self.db.fetch_pending_images()
+        # Always update stats to show DB count even if no pending images
+        total_db = self.db.get_annotated_count()
+        self.form_panel.update_stats(0 if not self.data else 1, len(self.data), total_db)
+        
         if not self.data:
             self.image_panel.clear()
             messagebox.showinfo("Done", "No pending images found in database.")
@@ -52,17 +56,32 @@ class MainWindow(ctk.CTk):
         self.image_panel.show_loading()
         # Fetching by path/name instead of URL
         self.image_panel.display_image(record.get("image_url"))
-        self.form_panel.update_stats(self.current_index + 1, len(self.data))
+        
+        # Fetch total annotated in DB
+        total_db = self.db.get_annotated_count()
+        self.form_panel.update_stats(self.current_index + 1, len(self.data), total_db)
 
     def on_submit(self):
         form_data = self.form_panel.get_data()
         
-        # Validation: Room, Color Theme, Use Case, Lighting, and Palette are mandatory
-        required_fields = ["room", "color_theme", "use_case", "lighting", "color_palette"]
-        missing = [f for f in required_fields if not form_data.get(f)]
+        # Validation: All fields are mandatory
+        required_fields = {
+            "room": "Room Type",
+            "color_theme": "Color Theme",
+            "use_case": "Use Case",
+            "lighting": "Lighting",
+            "color_palette": "Color Palette",
+            "furniture": "Furniture"
+        }
+        
+        missing = []
+        for key, label in required_fields.items():
+            val = form_data.get(key)
+            if not val: # Checks for empty string or empty list
+                missing.append(label)
         
         if missing:
-            messagebox.showwarning("Incomplete", f"Please fill: {', '.join(missing)}")
+            messagebox.showwarning("Incomplete", f"The following fields are mandatory:\n- " + "\n- ".join(missing))
             return
 
         record_id = self.data[self.current_index].get("id")
@@ -89,6 +108,9 @@ class MainWindow(ctk.CTk):
         if not self.data:
             self.image_panel.clear()
             self.form_panel.reset()
+            # Update stats even if list is empty to refresh DB count
+            total_db = self.db.get_annotated_count()
+            self.form_panel.update_stats(0, 0, total_db)
             messagebox.showinfo("Finished", "All pending images in this session processed.")
         else:
             # If we were at the end, go back one to new end
@@ -99,15 +121,3 @@ class MainWindow(ctk.CTk):
             self.form_panel.reset()
             # Defer slightly to ensure the UI has processed the pop/reset
             self.after(100, self.show_current)
-
-    def next_image(self):
-        if self.current_index < len(self.data) - 1:
-            self.current_index += 1
-            self.show_current()
-            self.form_panel.reset()
-
-    def prev_image(self):
-        if self.current_index > 0:
-            self.current_index -= 1
-            self.show_current()
-            self.form_panel.reset()

@@ -67,3 +67,23 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error discarding image: {e}")
             return False
+
+    def get_annotated_count(self):
+        """Returns total count of records marked as 'submitted' (case-insensitive)."""
+        try:
+            # Fetch only the IDs to count them, using case-insensitive ilike
+            # We fetch data directly because some client versions handle head=True/count='exact' inconsistently
+            response = self.client.table(TABLE_NAME).select("id").ilike("status", "submitted").execute()
+            
+            count = len(response.data) if response.data else 0
+            print(f"DEBUG: get_annotated_count found {count} records matching status 'submitted' (case-insensitive)")
+            
+            # If still 0, let's log what statuses DO exist to help debugging
+            if count == 0:
+                sample = self.client.table(TABLE_NAME).select("status").limit(5).execute()
+                print(f"DEBUG: Sample statuses in DB: {[r.get('status') for r in sample.data] if sample.data else 'No data'}")
+                
+            return count
+        except Exception as e:
+            print(f"Error getting annotated count: {e}")
+            return 0
