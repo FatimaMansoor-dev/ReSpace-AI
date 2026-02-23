@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS interior_images (
     lighting text,
     color_palette text,
     furniture jsonb, -- Stores array of furniture items
-    status text DEFAULT NULL -- Values: null, 'submitted', 'discarded'
+    status text DEFAULT NULL, -- Values: null, 'submitted', 'discarded'
+    assigned_to text DEFAULT NULL -- New column for multi-user support
 );
 
 -- Migration for existing table:

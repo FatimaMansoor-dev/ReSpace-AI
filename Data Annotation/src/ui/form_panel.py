@@ -50,8 +50,14 @@ class FormPanel(ctk.CTkFrame):
             self.furniture_checkboxes[item] = cb
 
         # Highlight: DB Stats above buttons
-        self.db_stats_label = ctk.CTkLabel(self, text="Total Annotated in DB: 0", font=("Inter", 11, "bold"))
-        self.db_stats_label.pack(pady=(2, 0))
+        self.stats_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.stats_frame.pack(pady=(2, 0))
+
+        self.user_stats_label = ctk.CTkLabel(self.stats_frame, text="You annotated: 0", font=("Inter", 11, "bold"), text_color="#3498db")
+        self.user_stats_label.pack()
+
+        self.db_stats_label = ctk.CTkLabel(self.stats_frame, text="Total Annotated in DB: 0", font=("Inter", 11))
+        self.db_stats_label.pack()
 
         # Bottom section: Submit and Pass buttons in one row
         self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -103,5 +109,6 @@ class FormPanel(ctk.CTkFrame):
         for cb in self.furniture_checkboxes.values():
             cb.deselect()
 
-    def update_stats(self, current, total_session, total_db):
+    def update_stats(self, current, total_session, total_db, user_annotated=0):
         self.db_stats_label.configure(text=f"Total Annotated in DB: {total_db}")
+        self.user_stats_label.configure(text=f"You annotated: {user_annotated}")

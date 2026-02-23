@@ -5,10 +5,14 @@ class DatabaseManager:
     def __init__(self):
         self.client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    def fetch_pending_images(self):
-        """Fetch records where status is null."""
+    def fetch_pending_images(self, username=None):
+        """Fetch records where status is null and optionally assigned to a user."""
         try:
-            response = self.client.table(TABLE_NAME).select("*").is_("status", "null").execute()
+            query = self.client.table(TABLE_NAME).select("*").is_("status", "null")
+            if username:
+                query = query.eq("assigned_to", username)
+            
+            response = query.execute()
             return response.data
         except Exception as e:
             print(f"Error fetching pending images: {e}")
@@ -68,15 +72,17 @@ class DatabaseManager:
             print(f"Error discarding image: {e}")
             return False
 
-    def get_annotated_count(self):
-        """Returns total count of records marked as 'submitted' (case-insensitive)."""
+    def get_annotated_count(self, username=None):
+        """Returns total count of records marked as 'submitted' for a specific user (or all)."""
         try:
-            # Fetch only the IDs to count them, using case-insensitive ilike
-            # We fetch data directly because some client versions handle head=True/count='exact' inconsistently
-            response = self.client.table(TABLE_NAME).select("id").ilike("status", "submitted").execute()
+            query = self.client.table(TABLE_NAME).select("id").ilike("status", "submitted")
+            if username:
+                query = query.eq("assigned_to", username)
+            
+            response = query.execute()
             
             count = len(response.data) if response.data else 0
-            print(f"DEBUG: get_annotated_count found {count} records matching status 'submitted' (case-insensitive)")
+            print(f"DEBUG: get_annotated_count found {count} records matching status 'submitted' (user: {username})")
             
             # If still 0, let's log what statuses DO exist to help debugging
             if count == 0:
