@@ -41,13 +41,6 @@ class MainWindow(ctk.CTk):
         self.state('zoomed') # Make it full screen/maximized
         self.load_images()
 
-    def adjust_user_count(self, username, count):
-        """Applies requested offsets for specific users."""
-        if username == "fatima":
-            return count + 7
-        if username == "zobia":
-            return count + 43
-        return count
 
     def setup_ui(self):
         self.grid_columnconfigure(0, weight=3) # Image (Balanced weight)
@@ -67,8 +60,11 @@ class MainWindow(ctk.CTk):
         # Always update stats to show DB count even if no pending images
         total_db = self.db.get_annotated_count()
         user_db = self.db.get_annotated_count(self.current_user)
-        adjusted_user_db = self.adjust_user_count(self.current_user, user_db)
-        self.form_panel.update_stats(0 if not self.data else 1, len(self.data), total_db, adjusted_user_db)
+        self.form_panel.update_stats(0 if not self.data else 1, len(self.data), total_db, user_db)
+        
+        # Update room type stats (Global)
+        room_counts = self.db.get_room_counts(None)
+        self.image_panel.update_room_stats(room_counts)
         
         if not self.data:
             self.image_panel.clear()
@@ -87,8 +83,11 @@ class MainWindow(ctk.CTk):
         # Fetch total and user annotated in DB
         total_db = self.db.get_annotated_count()
         user_db = self.db.get_annotated_count(self.current_user)
-        adjusted_user_db = self.adjust_user_count(self.current_user, user_db)
-        self.form_panel.update_stats(self.current_index + 1, len(self.data), total_db, adjusted_user_db)
+        self.form_panel.update_stats(self.current_index + 1, len(self.data), total_db, user_db)
+
+        # Update room type stats (Global)
+        room_counts = self.db.get_room_counts(None)
+        self.image_panel.update_room_stats(room_counts)
 
     def on_submit(self):
         form_data = self.form_panel.get_data()
@@ -140,8 +139,12 @@ class MainWindow(ctk.CTk):
             # Update stats even if list is empty to refresh DB count
             total_db = self.db.get_annotated_count()
             user_db = self.db.get_annotated_count(self.current_user)
-            adjusted_user_db = self.adjust_user_count(self.current_user, user_db)
-            self.form_panel.update_stats(0, 0, total_db, adjusted_user_db)
+            self.form_panel.update_stats(0, 0, total_db, user_db)
+            
+            # Update room type stats even if finished (Global)
+            room_counts = self.db.get_room_counts(None)
+            self.image_panel.update_room_stats(room_counts)
+            
             messagebox.showinfo("Finished", "All pending images in this session processed.")
         else:
             # If we were at the end, go back one to new end

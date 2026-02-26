@@ -93,3 +93,24 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error getting annotated count: {e}")
             return 0
+
+    def get_room_counts(self, username=None):
+        """Returns counts for each room type for records marked as 'submitted'."""
+        try:
+            query = self.client.table(TABLE_NAME).select("room_type").ilike("status", "submitted")
+            if username:
+                query = query.eq("assigned_to", username)
+            
+            response = query.execute()
+            
+            counts = {}
+            if response.data:
+                for record in response.data:
+                    room = record.get("room_type")
+                    if room:
+                        counts[room] = counts.get(room, 0) + 1
+            
+            return counts
+        except Exception as e:
+            print(f"Error getting room counts: {e}")
+            return {}

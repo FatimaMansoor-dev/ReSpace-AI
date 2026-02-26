@@ -1,0 +1,20 @@
+Total Submitted Records in DB: 230
+
+[User Distribution]
+  fatima      : 11
+  maham       : 14
+  muneeb      : 5
+  zobia       : 200
+
+[Room Type Distribution]
+  Bedroom             : 39
+  Dining Room         : 29
+  Kitchen             : 27
+  Lounge              : 135
+
+[URL Duplicate Check]
+  Unique URLs: 230
+  Duplicate URLs: 0
+
+[Missing Data Check]
+  Submitted records with MISSING room_type: 0
