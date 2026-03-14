@@ -4,14 +4,15 @@ import io
 import os
 from PIL import Image
 from src.utils.db_manager import SupabaseManager
-from src.utils.image_processor import resize_and_normalize, detect_blur_and_bright_spot, sharpen_image
+from src.utils.image_processor import train_test_split,assign_prompts_to_images,resize_and_normalize, detect_blur_and_bright_spot, sharpen_image
 
 def process_submitted_images(blur_threshold=250.0):
     """
     Main preprocessing flow:
     1. Fetch images with 'submitted' status from DB.
-    2. For each image, download bytes, decode to image, and process.
-    3. Count and report results.
+    2.generate prompts for images
+    3. For each image, download bytes, decode to image, and process.
+    4. Count and report results.
     """
     db = SupabaseManager()
     submitted_records = db.fetch_submitted_images()
@@ -19,7 +20,15 @@ def process_submitted_images(blur_threshold=250.0):
     if not submitted_records:
         print("No images with 'submitted' status found.")
         return
-
+    # Load your templates from prompts.json
+    import json
+    with open("prompts.json", "r") as f:
+        templates = json.load(f)["templates"]
+    ###function to assign prompt to images
+    assign_prompts_to_images(submitted_records,templates)
+ 
+    
+    
     # Initialize counters as requested
     blur_count = 0
     good_count = 0
@@ -75,7 +84,8 @@ def process_submitted_images(blur_threshold=250.0):
             except Exception as e:
                 print(f"Error processing image {image_path}: {e}")
                 continue
-
+    #split fetch_submitted_images but doesnot store anywhere
+    train_records,test_records=train_test_split(submitted_records)
     # Final summary output as requested
     print("-" * 50)
     print(f"Preprocessing completed.")

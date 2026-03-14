@@ -32,5 +32,14 @@ WHERE
     AND id NOT IN (SELECT id FROM processed_interior_images)
 ON CONFLICT (id) DO NOTHING;
 
+
+ALTER TABLE processed_interior_images 
+ADD COLUMN IF NOT EXISTS prompt TEXT;
+```
+
+**4.** You'll see a success message like:
+```
+Success. No rows returned.
+
 -- 4. (Optional) Provide a view or confirmation of migrated rows
 -- SELECT count(*) FROM processed_interior_images;
