@@ -4,7 +4,9 @@ import io
 import os
 from PIL import Image
 from src.utils.db_manager import SupabaseManager
-from src.utils.image_processor import train_test_split,assign_prompts_to_images,resize_and_normalize, detect_blur_and_bright_spot, sharpen_image
+from src.utils.image_processor import resize_and_normalize, detect_blur_and_bright_spot, sharpen_image
+from src.utils.data_splitter import train_test_split
+from src.utils.prompt_assigner import assign_prompts_to_images
 
 def process_submitted_images(blur_threshold=250.0):
     """
