@@ -16,7 +16,6 @@ __pycache__/
 .idea/
 
 # Dataset files
-prompts.json
 *.jpeg
 *.jpg
 *.png
