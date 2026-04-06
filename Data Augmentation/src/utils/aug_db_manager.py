@@ -1,21 +1,11 @@
 import os
 import sys
 import urllib.parse
-from supabase import create_client, Client
 
-# Share credentials from Data Annotation config
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-sys.path.append(os.path.join(project_root, "Data Annotation"))
+# Add project root to sys.path for shared utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-try:
-    from src.config import SUPABASE_URL, SUPABASE_KEY
-except ImportError:
-    raise ImportError(
-        "Could not import credentials from 'Data Annotation/src/config.py'. "
-        "Make sure that module is set up with a valid .env file."
-    )
+from shared import init_supabase, download_image as common_download
 
 AUGMENTED_BUCKET   = "Augmented Images"
 AUGMENTED_TABLE    = "augmented_images"
@@ -24,7 +14,7 @@ PREPROCESSED_TABLE = "preprocessed_images"
 
 class AugDbManager:
     def __init__(self):
-        self.client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        self.client = init_supabase()
 
     # ------------------------------------------------------------------
     # Read
@@ -70,24 +60,9 @@ class AugDbManager:
 
     def download_image(self, file_path, bucket_name="Raw Images"):
         """
-        Download raw image bytes from Supabase Storage.
-        Handles both plain filenames and full storage URLs.
+        Download raw image bytes from Supabase Storage using standardized shared utility.
         """
-        try:
-            clean_bucket = bucket_name.replace(" ", "%20")
-
-            if "storage/v1/object/public/" in file_path:
-                if f"/{bucket_name}/" in file_path:
-                    file_path = file_path.split(f"/{bucket_name}/")[-1]
-                elif f"/{clean_bucket}/" in file_path:
-                    file_path = file_path.split(f"/{clean_bucket}/")[-1]
-
-            actual_path = urllib.parse.unquote(file_path)
-            return self.client.storage.from_(bucket_name).download(actual_path)
-
-        except Exception as e:
-            print(f"Error downloading image '{file_path}': {e}")
-            return None
+        return common_download(self.client, file_path, bucket_name)
 
     # ------------------------------------------------------------------
     # Write
