@@ -6,3 +6,6 @@ requests
 pandas
 pyarrow
 datasets
+opencv-python
+numpy
+pytest
