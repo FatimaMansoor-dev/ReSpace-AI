@@ -1,5 +1,6 @@
-from src.utils.db_manager import SupabaseManager
-
+from db_manager import SupabaseManager
+import json
+import os
 def assign_prompts_to_images(records, templates: list) -> str:
     """
     Fetch images from Supabase and assign 1 template per 16 images.
@@ -9,13 +10,12 @@ def assign_prompts_to_images(records, templates: list) -> str:
     ...and so on.
     """
     BATCH_SIZE = 16
-
-    db = SupabaseManager()
+    print(type(templates))
+    print(templates)
+ 
 
     for i, record in enumerate(records):
-        if record.get("prompt"):
-            print(f"[{i}] ⏭️ Skipping — prompt already exists")
-            continue
+        
         
         # i // BATCH_SIZE integer division, tells you which batch you're in
         # % len(templates) prevents going out of bounds if images > templates
@@ -34,7 +34,7 @@ def assign_prompts_to_images(records, templates: list) -> str:
 
         # UPDATE Supabase table with the prompt only if NULL
         try:
-            db.client.table("processed_interior_images")\
+            db.client.table("preprocessed_images")\
             .update({"prompt": prompt})\
             .eq("id", record.get("id"))\
             .is_("prompt", "null")\
@@ -45,3 +45,16 @@ def assign_prompts_to_images(records, templates: list) -> str:
             continue
 
     return "successfully assigned"
+
+db = SupabaseManager()
+records = db.fetch_submitted_images() 
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+file_path = os.path.join(BASE_DIR, "prompts.json")
+
+with open(file_path, "r") as f:
+     TEMPLATES = json.load(f)
+     templates = TEMPLATES["templates"]
+
+assign_prompts_to_images(records, templates)

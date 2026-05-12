@@ -91,7 +91,7 @@ class AugDbManager:
             print(f"Error uploading '{filename}': {e}")
             return None
 
-    def save_augmented_record(self, original_id: str, image_url: str, aug_type: str):
+    def save_augmented_record(self, original_id: str, image_url: str, aug_type: str,  prompt: str):
         """
         Insert a row into the augmented_images table.
 
@@ -105,6 +105,7 @@ class AugDbManager:
                 "original_id": original_id,
                 "image_url":   image_url,
                 "aug_type":    aug_type,
+                "prompt": prompt
             }
             self.client.table(AUGMENTED_TABLE).insert(data).execute()
         except Exception as e:
