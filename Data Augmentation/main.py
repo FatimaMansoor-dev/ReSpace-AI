@@ -122,7 +122,7 @@ def run_augmentation():
                 continue
 
             # Save metadata to augmented_images table
-            db.save_augmented_record(record_id, uploaded_url, suffix, record.get("prompt"))
+            db.save_augmented_record(record_id, uploaded_url, suffix, record.get("prompt"), record.get("annotation"))
             total_augmented += 1
             print(f"  [OK] Saved augmented variant: {filename} (type={suffix})")
 

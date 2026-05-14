@@ -11,6 +11,7 @@ AUGMENTED_BUCKET   = "Augmented Images"
 AUGMENTED_TABLE    = "augmented_images"
 PREPROCESSED_TABLE = "preprocessed_images"
 TEST_TABLE         = "test_images"
+ANNOTATED_TABLE    = "annotated_images"
 
 
 class AugDbManager:
@@ -48,6 +49,25 @@ class AugDbManager:
             augmented_ids = {r["original_id"] for r in aug_response.data}
 
             unique = [r for r in all_records if r["id"] not in augmented_ids]
+            
+            # --- Merge with annotations ---
+            if unique:
+                unique_ids = [r["id"] for r in unique]
+                ann_response = self.client.table(ANNOTATED_TABLE).select("*").in_("id", unique_ids).execute()
+                ann_data = {r["id"]: r for r in ann_response.data}
+                
+                for r in unique:
+                    ann = ann_data.get(r["id"], {})
+                    r["annotation"] = {
+                        "room_type": ann.get("room_type"),
+                        "color_theme": ann.get("color_theme"),
+                        "use_case": ann.get("use_case"),
+                        "lighting": ann.get("lighting"),
+                        "color_palette": ann.get("color_palette"),
+                        "furniture": ann.get("furniture")
+                    }
+            # ------------------------------
+
             print(
                 f"Incremental fetch: {len(all_records)} total preprocessed | "
                 f"{len(augmented_ids)} already augmented | "
@@ -61,11 +81,35 @@ class AugDbManager:
 
     def fetch_records_by_ids(self, ids):
         """
-        Fetch specific records from preprocessed_images by their IDs.
+        Fetch specific records from preprocessed_images and merge with annotation data.
         """
         try:
+            # 1. Fetch from preprocessed_images
             response = self.client.table(PREPROCESSED_TABLE).select("*").in_("id", ids).execute()
-            return response.data
+            pre_records = response.data
+            
+            if not pre_records:
+                return []
+
+            # 2. Fetch corresponding annotations from annotated_images
+            # We join on the 'id' field as confirmed by database mapping
+            ann_response = self.client.table(ANNOTATED_TABLE).select("*").in_("id", ids).execute()
+            ann_data = {r["id"]: r for r in ann_response.data}
+
+            # 3. Merge
+            for r in pre_records:
+                ann = ann_data.get(r["id"], {})
+                # Extract relevant annotation fields into a structured dict
+                r["annotation"] = {
+                    "room_type": ann.get("room_type"),
+                    "color_theme": ann.get("color_theme"),
+                    "use_case": ann.get("use_case"),
+                    "lighting": ann.get("lighting"),
+                    "color_palette": ann.get("color_palette"),
+                    "furniture": ann.get("furniture")
+                }
+            
+            return pre_records
         except Exception as e:
             print(f"Error fetching records by IDs: {e}")
             return []
@@ -103,21 +147,23 @@ class AugDbManager:
             print(f"Error uploading '{filename}': {e}")
             return None
 
-    def save_augmented_record(self, original_id: str, image_url: str, aug_type: str,  prompt: str):
+    def save_augmented_record(self, original_id: str, image_url: str, aug_type: str,  prompt: str, annotation: dict = None):
         """
-        Insert a row into the augmented_images table.
-
-        Args:
-            original_id: UUID of the source record in preprocessed_images.
-            image_url:   Filename / path in the Augmented Images bucket.
-            aug_type:    'scaled_crop' or 'horizontal_flip'.
+        Insert a row into the augmented_images table with individual annotation columns.
         """
         try:
+            annotation = annotation or {}
             data = {
-                "original_id": original_id,
-                "image_url":   image_url,
-                "aug_type":    aug_type,
-                "prompt": prompt
+                "original_id":   original_id,
+                "image_url":     image_url,
+                "aug_type":      aug_type,
+                "prompt":        prompt,
+                "room_type":     annotation.get("room_type"),
+                "color_theme":   annotation.get("color_theme"),
+                "use_case":      annotation.get("use_case"),
+                "lighting":      annotation.get("lighting"),
+                "color_palette": annotation.get("color_palette"),
+                "furniture":     annotation.get("furniture")
             }
             self.client.table(AUGMENTED_TABLE).insert(data).execute()
         except Exception as e:
@@ -130,10 +176,17 @@ class AugDbManager:
         try:
             formatted_records = []
             for r in records:
+                ann = r.get("annotation") or {}
                 formatted_records.append({
-                    "original_id": r["id"],
-                    "image_url":   r.get("image_url") or r.get("filepath") or r.get("path"),
-                    "prompt":      r.get("prompt")
+                    "original_id":   r["id"],
+                    "image_url":     r.get("image_url") or r.get("filepath") or r.get("path"),
+                    "prompt":        r.get("prompt"),
+                    "room_type":     ann.get("room_type"),
+                    "color_theme":   ann.get("color_theme"),
+                    "use_case":      ann.get("use_case"),
+                    "lighting":      ann.get("lighting"),
+                    "color_palette": ann.get("color_palette"),
+                    "furniture":     ann.get("furniture")
                 })
             
             if formatted_records:
