@@ -10,6 +10,7 @@ from shared import init_supabase, download_image as common_download
 AUGMENTED_BUCKET   = "Augmented Images"
 AUGMENTED_TABLE    = "augmented_images"
 PREPROCESSED_TABLE = "preprocessed_images"
+TEST_TABLE         = "test_images"
 
 
 class AugDbManager:
@@ -56,6 +57,17 @@ class AugDbManager:
 
         except Exception as e:
             print(f"Error fetching preprocessed images: {e}")
+            return []
+
+    def fetch_records_by_ids(self, ids):
+        """
+        Fetch specific records from preprocessed_images by their IDs.
+        """
+        try:
+            response = self.client.table(PREPROCESSED_TABLE).select("*").in_("id", ids).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching records by IDs: {e}")
             return []
 
     def download_image(self, file_path, bucket_name="Raw Images"):
@@ -110,3 +122,34 @@ class AugDbManager:
             self.client.table(AUGMENTED_TABLE).insert(data).execute()
         except Exception as e:
             print(f"Error saving augmented record (id={original_id}, type={aug_type}): {e}")
+
+    def save_test_records(self, records):
+        """
+        Bulk insert records into the test_images table.
+        """
+        try:
+            formatted_records = []
+            for r in records:
+                formatted_records.append({
+                    "original_id": r["id"],
+                    "image_url":   r.get("image_url") or r.get("filepath") or r.get("path"),
+                    "prompt":      r.get("prompt")
+                })
+            
+            if formatted_records:
+                self.client.table(TEST_TABLE).insert(formatted_records).execute()
+                print(f"Successfully saved {len(formatted_records)} records to {TEST_TABLE}.")
+        except Exception as e:
+            print(f"Error saving test records: {e}")
+
+    def clear_test_images(self):
+        """
+        Remove all records from test_images table.
+        """
+        try:
+            # In Supabase, a delete without a filter might be restricted. 
+            # We use a filter that matches everything if possible, or just catch the need for manual truncate.
+            self.client.table(TEST_TABLE).delete().neq("image_url", "null").execute()
+            print(f"Cleared {TEST_TABLE} table.")
+        except Exception as e:
+            print(f"Note: Could not clear {TEST_TABLE} automatically (might need manual TRUNCATE): {e}")
