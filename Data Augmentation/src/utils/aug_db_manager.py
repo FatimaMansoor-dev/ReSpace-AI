@@ -108,6 +108,7 @@ class AugDbManager:
                     "color_palette": ann.get("color_palette"),
                     "furniture": ann.get("furniture")
                 }
+                r["prompt"] = r.get("prompt")
             
             return pre_records
         except Exception as e:
