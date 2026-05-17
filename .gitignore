@@ -6,7 +6,6 @@ venv/
 ENV/
 env/
 .venv/
-Inference/
 
 # Python cache
 __pycache__/
